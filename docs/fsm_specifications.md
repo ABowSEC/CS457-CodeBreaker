@@ -3,15 +3,15 @@ Detailed state transition diagram created strictly using Mermaid (stateDiagram-v
 
 ```mermaid
 
-stateDiagram-Example
-    [*] --> Init
-    Init --> Wait_For_Conn
-    Wait_For_Conn --> Start_Game
-    Start_Game --> Player1_Turn
-    Player1_Turn --> Eval_Move
-    Eval_Move --> End_Game
-    End_Game --> CLEANUP
-    CLEANUP --> Wait_For_Conn
+stateDiagram-Example;
+    [*] --> Init;
+    Init --> Wait_For_Conn;
+    Wait_For_Conn --> Start_Game;
+    Start_Game --> Player_Turn;
+    Player_Turn --> Eval_Move;
+    Eval_Move --> End_Game;
+    End_Game --> CLEANUP;
+    CLEANUP --> Wait_For_Conn;
     
 
 ```
