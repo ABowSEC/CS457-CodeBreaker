@@ -2,16 +2,14 @@ Detailed state transition diagram created strictly using Mermaid (stateDiagram-v
 
 
 ```mermaid
-
-graph TD;
-    [*] --> Init;
-    Init --> Wait_For_Conn;
-    Wait_For_Conn --> Start_Game;
-    Start_Game --> Player_Turn;
-    Player_Turn --> Eval_Move;
-    Eval_Move --> End_Game;
-    End_Game --> CLEANUP;
-    CLEANUP --> Wait_For_Conn;
-    
-
+stateDiagram-v2
+    [*] --> Init
+    Init --> Wait_For_Conn
+    Wait_For_Conn --> Start_Game
+    Start_Game --> Player_Turn
+    Player_Turn --> Eval_Move
+    Eval_Move --> Player_Turn : invalid_Move
+    Eval_Move --> End_Game
+    End_Game --> CLEANUP : client disconnect
+    CLEANUP --> Wait_For_Conn
 ```
