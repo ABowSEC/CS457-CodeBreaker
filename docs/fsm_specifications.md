@@ -3,7 +3,7 @@ Detailed state transition diagram created strictly using Mermaid (stateDiagram-v
 
 ```mermaid
 
-stateDiagram-Example;
+graph TD;
     [*] --> Init;
     Init --> Wait_For_Conn;
     Wait_For_Conn --> Start_Game;
