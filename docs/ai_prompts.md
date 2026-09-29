@@ -1,0 +1,1 @@
+Documented system prompts used to force AI coding tools to implement parser/serialization functions matching your exact schema.
