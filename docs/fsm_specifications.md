@@ -22,19 +22,11 @@ stateDiagram-v2
 Dissconnections
 ```mermaid
     stateDiagram-v2
-    direction TB
+
     WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : Departure / free slot
-    GAME_START --> GAME_OVER : Departure / forfeit
-    PLAYER_TURN --> GAME_OVER : Departure / forfeit
-    EVALUATE_MOVE --> GAME_OVER : Departure / forfeit
-
-    PLAYER_TURN --> PLAYER_TURN : First timeout / count attempt / STATE_UPDATE
-    PLAYER_TURN --> GAME_OVER : First timeout exhausts attempts / draw
-    PLAYER_TURN --> GAME_OVER : Second timeout / forfeit
-
-    GAME_START --> CLEANUP : Neither player remains
-    PLAYER_TURN --> CLEANUP : Neither player remains
-    EVALUATE_MOVE --> CLEANUP : Neither player remains
+    ACTIVE --> GAME_OVER : Departure / opponent remains / forfeit
+    ACTIVE --> CLEANUP : Neither player remains
+    GAME_OVER --> CLEANUP : Send GAME_OVER if possible
 ```
 
 
