@@ -19,7 +19,7 @@
 ### 1.1 Game Overview
 - **Chosen Game:** Mastermind, Code-Breaker
 - **Player Capacity:** 2 Players (Simulated via 2 CML Client nodes)
-- **Game Summary:** The server comes up with a 4-6 digit random string of unique numbers. TWo clients connect and the clients will take turns guessing what the string is. After each guess, the server provides clues showing how many digits are correct and in the correct position, and how many digits are correct but in the wrong position. Players use this feedback to narrow down the possible code. The first player to correctly guess the entire secret code wins the game.
+- **Game Summary:** The server comes up with a 4 digit random string of unique numbers. TWo clients connect and the clients will take turns guessing what the string is. After each guess, the server provides clues showing how many digits are correct and in the correct position, and how many digits are correct but in the wrong position. Players use this feedback to narrow down the possible code. The first player to correctly guess the entire secret code wins the game.
 
 
 ### 1.2 Core Game Rules & Win/Draw Conditions
