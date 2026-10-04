@@ -1,36 +1,43 @@
 Detailed state transition diagram created strictly using Mermaid (stateDiagram-v2) syntax and state handling logic, explicitly addressing valid moves, invalid moves, and unexpected client disconnections.
 
+Broken into two diagrams as it was overlapping
+Normal Flow
 ```mermaid
 stateDiagram-v2
+    direction TB
     [*] --> INIT
     INIT --> WAITING_FOR_PLAYERS
     WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : First CONNECT / LOBBY_WAIT
-    WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : Departure / free slot
     WAITING_FOR_PLAYERS --> GAME_START : Second CONNECT
     GAME_START --> PLAYER_TURN : Generate code / assign roles / Player 1 starts
-    GAME_START --> GAME_OVER : Departure / forfeit
 
     PLAYER_TURN --> EVALUATE_MOVE : MOVE
-    EVALUATE_MOVE --> PLAYER_TURN : Invalid or out of turn / ERROR / same turn
-    EVALUATE_MOVE --> PLAYER_TURN : Incorrect / STATE_UPDATE / next eligible turn
-    EVALUATE_MOVE --> GAME_OVER : Correct / win
-    EVALUATE_MOVE --> GAME_OVER : Attempts exhausted / draw
+    EVALUATE_MOVE --> PLAYER_TURN : Rejected / same turn
+    EVALUATE_MOVE --> PLAYER_TURN : Incorrect / next eligible turn
+    EVALUATE_MOVE --> GAME_OVER : Correct guess or attempts exhausted
 
-    PLAYER_TURN --> PLAYER_TURN : First timeout / count attempt / skip turn
-    PLAYER_TURN --> GAME_OVER : Timeout exhausts attempts / draw
-    PLAYER_TURN --> GAME_OVER : Second timeout / forfeit
-
-    state ACTIVE {
-        GAME_START
-        PLAYER_TURN
-        EVALUATE_MOVE
-    }
-    ACTIVE --> GAME_OVER : Departure / opponent remains / forfeit
-    ACTIVE --> CLEANUP : Departure / neither player remains
-
-    GAME_OVER --> CLEANUP : Send result if possible
+    GAME_OVER --> CLEANUP : Send GAME_OVER
     CLEANUP --> WAITING_FOR_PLAYERS : Close clients / reset
 ```
+Dissconnections
+```mermaid
+    stateDiagram-v2
+    direction TB
+    WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : Departure / free slot
+    GAME_START --> GAME_OVER : Departure / forfeit
+    PLAYER_TURN --> GAME_OVER : Departure / forfeit
+    EVALUATE_MOVE --> GAME_OVER : Departure / forfeit
+
+    PLAYER_TURN --> PLAYER_TURN : First timeout / count attempt / STATE_UPDATE
+    PLAYER_TURN --> GAME_OVER : First timeout exhausts attempts / draw
+    PLAYER_TURN --> GAME_OVER : Second timeout / forfeit
+
+    GAME_START --> CLEANUP : Neither player remains
+    PLAYER_TURN --> CLEANUP : Neither player remains
+    EVALUATE_MOVE --> CLEANUP : Neither player remains
+```
+
+
 
 INIT: Initialize server, listening socket, and new game data.
 
