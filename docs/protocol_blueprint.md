@@ -12,14 +12,14 @@ Client will input an alias and server will finalize conenction by validating ali
 
 | Message | Direction | Payload contents |
 |---|---|---|
-| `CONNECT` | Client to Server | Player alias |
-| `LOBBY_WAIT` | Server to Client | Assigned player number and waiting notification |
-| `GAME_START` | Server to Both clients | Recipient’s player number, active player, code length, attempt limit, turn duration |
-| `MOVE` | Client to Server | Guess and turn id |
-| `STATE_UPDATE` | Server to Both clients | Feedback, both players’ counters, active player, turn identifier |
-| `ERROR` | Server to Client | Error code and explanation |
-| `DISCONNECT` | Client to Server | Departure reason |
-| `GAME_OVER` | Server to Both connected clients | Outcome, winner, reason, final counters, and display message |
+| `CONNECT` | Client $\rightarrow$  Server | Player alias |
+| `LOBBY_WAIT` | Server $\rightarrow$  Client | Assigned player number and waiting notification |
+| `GAME_START` | Server $\rightarrow$ Both clients | Recipient’s player number, active player, code length, attempt limit, turn duration |
+| `MOVE` | Client $\rightarrow$  Server | Guess and turn id |
+| `STATE_UPDATE` | Server $\rightarrow$  Both clients | Feedback, both players’ counters, active player, turn identifier |
+| `ERROR` | Server $\rightarrow$  Client | Error code and explanation |
+| `DISCONNECT` | Client $\rightarrow$  Server | Departure reason |
+| `GAME_OVER` | Server $\rightarrow$  Both connected clients | Outcome, winner, reason, final counters, and display message |
 
 **EXPECTED STRUCTURE of each:**
 
