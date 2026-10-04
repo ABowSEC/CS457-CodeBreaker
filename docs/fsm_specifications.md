@@ -4,27 +4,32 @@ Detailed state transition diagram created strictly using Mermaid (stateDiagram-v
 stateDiagram-v2
     [*] --> INIT
     INIT --> WAITING_FOR_PLAYERS
-    WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : First player joins / send LOBBY_WAIT
-    WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : DISCONNECT or connection loss / free player_slot
-    WAITING_FOR_PLAYERS --> GAME_START : Two clients confirmed connected
-    GAME_START --> PLAYER_TURN : Generate secret / assign player roles / player 1 starts
-    GAME_START --> GAME_OVER : DISCONNECT or connection loss / opponent wins by forfeit
+    WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : First CONNECT / LOBBY_WAIT
+    WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : Departure / free slot
+    WAITING_FOR_PLAYERS --> GAME_START : Second CONNECT
+    GAME_START --> PLAYER_TURN : Generate code / assign roles / Player 1 starts
+    GAME_START --> GAME_OVER : Departure / forfeit
 
-    PLAYER_TURN --> EVALUATE_MOVE : MOVE received
+    PLAYER_TURN --> EVALUATE_MOVE : MOVE
     EVALUATE_MOVE --> PLAYER_TURN : Invalid or out of turn / ERROR / same turn
-    EVALUATE_MOVE --> PLAYER_TURN : Valid incorrect guess and attempts remain / STATE_UPDATE / next eligible turn
-    EVALUATE_MOVE --> GAME_OVER : Guess matches secret / player wins
-    EVALUATE_MOVE --> GAME_OVER : Incorrect guess and both players used 10 attempts / draw
+    EVALUATE_MOVE --> PLAYER_TURN : Incorrect / STATE_UPDATE / next eligible turn
+    EVALUATE_MOVE --> GAME_OVER : Correct / win
+    EVALUATE_MOVE --> GAME_OVER : Attempts exhausted / draw
 
-    PLAYER_TURN --> PLAYER_TURN : First timeout / increment miss_turn / add attempt / attempts remain / STATE_UPDATE
-    PLAYER_TURN --> GAME_OVER : First timeout / increment miss_turn / add attempt / both players reached 10 attempts / draw
-    PLAYER_TURN --> GAME_OVER : Second timeout for same player / opponent wins by forfeit
+    PLAYER_TURN --> PLAYER_TURN : First timeout / count attempt / skip turn
+    PLAYER_TURN --> GAME_OVER : Timeout exhausts attempts / draw
+    PLAYER_TURN --> GAME_OVER : Second timeout / forfeit
 
-    PLAYER_TURN --> GAME_OVER : DISCONNECT or connection loss / opponent wins by forfeit
-    EVALUATE_MOVE --> GAME_OVER : DISCONNECT or connection loss / opponent wins by forfeit
+    state ACTIVE {
+        GAME_START
+        PLAYER_TURN
+        EVALUATE_MOVE
+    }
+    ACTIVE --> GAME_OVER : Departure / opponent remains / forfeit
+    ACTIVE --> CLEANUP : Departure / neither player remains
 
-    GAME_OVER --> CLEANUP : Send GAME_OVER to connected clients if any
-    CLEANUP --> WAITING_FOR_PLAYERS : Close client sockets / reset game
+    GAME_OVER --> CLEANUP : Send result if possible
+    CLEANUP --> WAITING_FOR_PLAYERS : Close clients / reset
 ```
 
 INIT: Initialize server, listening socket, and new game data.
