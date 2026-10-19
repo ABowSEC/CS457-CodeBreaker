@@ -1,26 +1,27 @@
 
-***NEED TO UPDATE TO MY SPECS***
-
+Basic Diagram o0f the sequence order
 ```mermaid
 sequenceDiagram
     autonumber
     actor Client1 as Client 1 (Player X)
     participant Server as Game Server
-    actor Client2 as Client 2 (Player O)
+    actor Client2 as Client 2 (Player Y)
 
-    Client1->>Server: Guess
-    Note over Server: Server validates: Is it Client 1's turn?<br>Is String length correct?
-    alt Valid Move
-        Note over Server: Update Game Board<br>Switch Active Turn to Player 2
-        Server-->>Client1: STATE_UPDATE (Guess result, Turn: Player 2)
-        Server-->>Client2: STATE_UPDATE (Guess result, Turn: Player 2)
-    else Invalid / Out of Turn Move
-        Server-->>Client1: ERROR ("Invalid Guess" or "Not Your Turn")
+    Client1->>Server: Move (guess, turn_id)
+    Note over Server: Server validations: Is it Client 1's turn?<br>Is turn_id current?<br>Is the guess four unique digits?
+    alt Invalid / Out of Turn Move
+        Server-->>Client1: ERROR ("Invalid Guess", "Not Your Turn", or "Stale Turn")
+    else Valid MOVE
+        Note over Server: Update guess result and attempt count
+        alt Game Continues
+            Note over Server: Switch Active Turn to Player 2<br>Increment turn_id and reset turn timer
+            Server-->>Client1: STATE_UPDATE (Guess result, attempt counts, Turn: Player 2, turn_id)
+            Server-->>Client2: STATE_UPDATE (Guess result, attempt counts, Turn: Player 2, turn_id)
+        else Game Over
+            Note over Server: Finalize outcome and final attempt counts
+            Server-->>Client1: GAME_OVER (Outcome, final attempt counts)
+            Server-->>Client2: GAME_OVER (Outcome, final attempt counts)
+        end
     end
+    Note over Client1,Client2: Both updates are queued from the same server state.<br>Network arrival times may differ.
 ```
-
-I think im going to use Option B: Non-Blocking I/O Multiplexing (selectors / select.select)
-    The server sets client sockets to non-blocking mode (sock.setblocking(False)).
-    An OS event loop monitors read/write availability across all sockets within a single thread.
-
-This may keep clean states and ensure we easily handle player 1 and 2 no need to have a thread for this type of game need to confirm still.
