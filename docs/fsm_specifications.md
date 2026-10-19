@@ -10,23 +10,25 @@ stateDiagram-v2
     INIT --> WAITING_FOR_PLAYERS
     WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : First CONNECT / LOBBY_WAIT
     WAITING_FOR_PLAYERS --> GAME_START : Second CONNECT
-    GAME_START --> PLAYER_TURN : Generate code / assign roles / set turn_id to 1 / Player 1 starts
+    GAME_START --> PLAYER_TURN : Generate code / reset round / Player 1 starts
 
     PLAYER_TURN --> EVALUATE_MOVE : MOVE / check turn_id
     EVALUATE_MOVE --> PLAYER_TURN : Invalid or out of turn / ERROR / same turn
     EVALUATE_MOVE --> PLAYER_TURN : Incorrect and attempts remain / STATE_UPDATE / next eligible turn
-    
-    EVALUATE_MOVE --> GAME_OVER : Correct guess/win
-    EVALUATE_MOVE --> GAME_OVER : Attempt limits reached w/out correct code / draw
+    EVALUATE_MOVE --> GAME_OVER : Correct guess / win
+    EVALUATE_MOVE --> GAME_OVER : Both attempt limits reached / draw
 
-
-    GAME_OVER --> CLEANUP : Send GAME_OVER
-    CLEANUP --> WAITING_FOR_PLAYERS : Close clients / reset
+    GAME_OVER --> REMATCH_WAIT : Both connected / send results and leaderboard
+    GAME_OVER --> CLEANUP : Player missing / send results if possible
+    REMATCH_WAIT --> REMATCH_WAIT : One player agrees / wait for other player
+    REMATCH_WAIT --> GAME_START : Both agree / preserve session totals
+    REMATCH_WAIT --> CLEANUP : Player declines or departs
+    CLEANUP --> WAITING_FOR_PLAYERS : Reset round / keep remaining player
 ```
 ***Dissconnections***
 ```mermaid
-    stateDiagram-v2
-
+stateDiagram-v2
+    direction TB
     WAITING_FOR_PLAYERS --> WAITING_FOR_PLAYERS : Departure / free slot
 
     NORMAL_FLOW --> GAME_OVER : Departure / opponent remains / forfeit
@@ -37,7 +39,10 @@ stateDiagram-v2
     SKIP_TURN --> NORMAL_FLOW : Attempts remain / STATE_UPDATE / next eligible turn
     SKIP_TURN --> GAME_OVER : Both players reached 10 attempts / draw
 
-    GAME_OVER --> CLEANUP : Send GAME_OVER if possible
+    GAME_OVER --> REMATCH_WAIT : Both connected / send results and leaderboard
+    GAME_OVER --> CLEANUP : Player missing / send results if possible
+    REMATCH_WAIT --> CLEANUP : Player declines or departs
+    CLEANUP --> WAITING_FOR_PLAYERS : Reset round / keep remaining player
 
 ```
 ***NORMAL_FLOW represents GAME_START, PLAYER_TURN, and EVALUATE_MOVE in the first diagram. Timeout paths apply only during PLAYER_TURN. Departure means DISCONNECT, TCP EOF, or a socket error.***
@@ -45,9 +50,9 @@ stateDiagram-v2
 
 **INIT:** Initialize server, listening socket, and new game data.
 
-**WAITING_FOR_PLAYERS:** Accepts valid CONNECT requests. First accepted connection will be player 1 and will receive LOBBY_WAIT. Once a second CONNECT request is accepted, the game will transition to GAME_START. If the waiting player disconnects, free their player slot.
+**WAITING_FOR_PLAYERS:** Accepts valid CONNECT requests. First accepted connection will be player 1 and will receive LOBBY_WAIT. Once a second CONNECT request is accepted, the game will transition to GAME_START. If the waiting player disconnects, free their player slot. If one player remains from a previous game, keep that player’s session totals and assign them Player 1 for the next game. A new player starts with zero session totals
 
-**GAME_START:** Generates a 4 digit secret code with no repeated numbers, sets both players’ attempt counts and miss_turn variables to 0, and sends GAME_START to both clients. Player 1 starts.
+**GAME_START:** Generates a 4 digit secret code with no repeated numbers, sets both players’ attempt counts and miss_turn variables to 0, and sends GAME_START to both clients. Player 1 starts. Set turn_id to 1 and clear previous rematch choices. Preserve session totals for rounds won and total guesses
 
 **PLAYER_TURN**: Wait for a move while watching both connections for timeouts/disconnection. The server continues checking the turn deadline even while receiving an incomplete message.
 
@@ -55,9 +60,13 @@ stateDiagram-v2
 
 Check that turn_id matches the current turn. A mismatch produces ERROR without changing the turn or attempt count. Each new turn, including one following a timeout, increments turn_id.
 
-**GAME_OVER:** Record the result of winner, draw, or forfeit and send GAME_OVER with the results and final guess, if any, to connected clients. If neither player remains connected before a result is recorded, proceed to CLEANUP without a winner. Once recorded, the result will not change due to later disconnections.
+Each valid guess also increments the player’s total guesses for the session. Timeouts consume an attempt but do not count as submitted guesses.
 
-**CLEANUP:** Close client sockets and clear players, secret code, attempts, miss_turn counters, turn timers, and any other history from the session. Keep the listening socket open for a new game by returning to WAITING_FOR_PLAYERS.
+**GAME_OVER:** Record the result of winner, draw, or forfeit and update rounds won once. Send GAME_OVER with the results, final guess if any, final attempt counts, and updated leaderboard to connected clients. If both players remain connected, transition to REMATCH_WAIT. Otherwise, proceed to CLEANUP. If neither player remains before a result is recorded, proceed to CLEANUP without a winner. Once recorded, the result will not change due to later disconnections.
+
+REMATCH_WAIT: Both clients can choose to play again. If both agree server transitions to GAME_START while preserving session totals. If either declines or disconnects, proceed to CLEANUP. MOVE messages are rejected in this state.
+
+**CLEANUP:** Unregister and close departing clients sockets and remove those players. Clear the secret code, attempt counts, miss_turn counters, turn timers, rematch choices, and round history. Keep any remaining player connected and preserve their session totals. Keep the listening socket open and return to WAITING_FOR_PLAYERS.
 
 **TIMEOUT:** Each player has 120 seconds to submit a complete, valid MOVE once their turn starts. The timer starts when the server sends GAME_START or STATE_UPDATE identifying that player as active. The valid MOVE must be completely received before the deadline. Invalid or out of turn messages do not reset the timer. On that player’s first timeout, increment their miss_turn counter by 1, skip their turn without reusing previous input, and add an attempt. If both players have now reached 10 attempts, transition to GAME_OVER with a DRAW and display “You both lose.” Otherwise, send STATE_UPDATE identifying the next player with attempts remaining and start a fresh 120-second timer for that turn. If only one player has attempts remaining, that player continues. On that same player’s second timeout during the game, the server transitions to GAME_OVER and the opponent wins by forfeit. Intentional DISCONNECT, TCP EOF, and socket errors are handled immediately.
 
