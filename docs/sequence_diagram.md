@@ -10,7 +10,7 @@ sequenceDiagram
     Client1->>Server: Move (guess, turn_id)
     Note over Server: Server validations: Is it Client 1's turn?<br>Is turn_id current?<br>Is the guess four unique digits?
     alt Invalid / Out of Turn Move
-        Server-->>Client1: ERROR ("Invalid Guess", "Not Your Turn", or "Stale Turn")
+        Server-->>Client1: ERROR ("Invalid Guess" or "Not Your Turn")
     else Valid MOVE
         Note over Server: Update guess result and attempt count
         alt Game Continues
