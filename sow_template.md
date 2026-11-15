@@ -89,7 +89,7 @@
   - `server.py`: selectors event loop and FSM
   - `client.py`: console UI
 
-  Unit tests cover framing edge cases and rules. Integration tests start the real server and script two clients through wins, timeouts, forfeits and rematches. A localhost run is recorded in `docs/execution_log.md`.
+  Unit tests cover framing edge cases and rules. Integration tests start the real server and script two clients through wins, timeouts, forfeits and rematches. A localhost execution log is submitted separately.
 
 ### 4.1 How to Run (Sprint 3)
 ```text

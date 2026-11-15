@@ -29,7 +29,7 @@ If the hostname cannot be resolved, the client prints a DNS troubleshooting hint
 | `protocol.py` | 4-byte length-prefix framing, JSON serialization, schema validation |
 | `game.py` | Pure game rules (secret, scoring, turns, timeouts, leaderboard) |
 | `tests/` | Unit and integration tests |
-| `docs/` | Protocol blueprint, FSM, concurrency design, sequence diagram, execution log |
+| `docs/` | Protocol blueprint, FSM, concurrency design, sequence diagram |
 
 ## Tests
 
