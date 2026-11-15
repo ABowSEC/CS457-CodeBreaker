@@ -28,3 +28,5 @@ dist/
 # Environment/secrets
 .env
 .env.*
+# Execution log (submitted separately)
+docs/execution_log.md
