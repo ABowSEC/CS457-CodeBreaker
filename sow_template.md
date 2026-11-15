@@ -33,8 +33,8 @@
 
 ### 2.1 Message Transport & Serialization Format
 - **Transport Protocol:** TCP
-- **Serialization Format:** [JSON / Fixed-Header Binary / Delimited Text]
-- **Framing Mechanism:** [e.g., Newline-delimited (`\n`) JSON payloads OR 4-byte big-endian length prefix]
+- **Serialization Format:** JSON (UTF-8)
+- **Framing Mechanism:** 4-byte unsigned big-endian length prefix (payload 1–16,384 bytes), no newline terminator. Full detail is in `docs/protocol_blueprint.md`.
 
 ### 2.2 Message Schema Definitions
 
@@ -46,17 +46,17 @@
 5. `STATE_UPDATE` (Server -> Clients): Broadcast current game board / state and active player turn.
 6. `GAME_OVER` (Server -> Clients): Victory / Draw notification with final scores.
 7. `ERROR` (Server -> Client): Invalid move or malformed packet error.
+8. `DISCONNECT` (Client -> Server): Intentional quit (forfeit during a game).
+9. `REMATCH` (Client -> Server): Play-again choice after `GAME_OVER` (added in Sprint 3).
 
 #### Example JSON Protocol Schema:
 ```json
 {
   "msg_type": "MOVE",
-  "player_id": "Player_1",
   "payload": {
-    "row": 0,
-    "col": 2
-  },
-  "timestamp": 1727000000
+    "guess": "0123",
+    "turn_id": 1
+  }
 }
 ```
 
@@ -70,20 +70,34 @@
 ## 3. Game Behavior & Server Concurrency Architecture (Sprint 2 Deliverable)
 
 ### 3.1 Server Concurrency Strategy
-- **Architecture Choice:** [Multi-Threading (`threading.Thread`) OR Non-blocking I/O multiplexing (`select.select` / `selectors`)]
-- **Synchronization Logic:** Explain how shared game state and client list are thread-safe (e.g. `threading.Lock`) to prevent race conditions during turn processing.
+- **Architecture Choice:** Non-blocking I/O multiplexing with `selectors` (see `docs/concurrency_design.md`).
+- **Synchronization Logic:** A single thread owns all game state, the player table and every socket, so no `threading.Lock` is needed. Each client has its own receive `FrameBuffer` and outgoing byte buffer. The selector watches for writability only while a buffer has data.
 
 ### 3.2 State & Score Synchronization Across Clients
-- **Turn Enforcement:** Detail how the server validates active player ID before processing moves and broadcasts updated turn notifications to all clients.
-- **Score & Board Synchronization:** Describe how state broadcasts keep client screens synchronized in real time.
+- **Turn Enforcement:** Before processing a `MOVE`, the server checks the game state, the sender against `active_player`, `turn_id` against the current turn, and the guess format. Any failure returns `ERROR` and changes nothing.
+- **Score & Board Synchronization:** After each valid guess or timeout, one `STATE_UPDATE` built from a single server state is queued for both players. Clients redraw the guess board, the score line and the turn status from it.
 
 ---
 
 ## 4. Coding & AI Implementation Plan (Sprint 3)
 
-- **Permitted AI Tools:** [e.g., GitHub Copilot, ChatGPT, Claude]
-- **AI Prompting & Constraint Strategy:** Explain how you will constrain AI models to generate code (in Python or your chosen language) that adheres strictly to the protocol blueprint and FSM designed in Sprints 1 & 2.
-- **Implementation Risk Management:** Detail your plan to leverage past programming experience and manage time to ensure code completion on schedule.
+- **Permitted AI Tools:** Claude (Claude Code)
+- **AI Prompting & Constraint Strategy:** The prompts in `docs/ai_prompts.md` name `docs/protocol_blueprint.md` and `docs/fsm_specifications.md` as the authoritative specs. They forbid inventing messages, fields or behavior, and require the AI to stop and ask when the specs are incomplete. That rule caught a real gap: the FSM's REMATCH_WAIT and leaderboard had no protocol message. It was resolved by adding `REMATCH` and the `leaderboard` field to the blueprint before any code was written.
+- **Implementation Risk Management:** The code is split into small modules so each part can be tested on its own:
+  - `protocol.py`: framing and schema
+  - `game.py`: pure rules
+  - `server.py`: selectors event loop and FSM
+  - `client.py`: console UI
+
+  Unit tests cover framing edge cases and rules. Integration tests start the real server and script two clients through wins, timeouts, forfeits and rematches. A localhost execution log is submitted separately.
+
+### 4.1 How to Run (Sprint 3)
+```text
+python3 server.py -p 8080
+python3 client.py -i server.bowman.edu -p 8080      # CML (Sprint 4)
+python3 client.py -i localhost -p 8080              # local testing
+python3 -m unittest discover -s tests -v
+```
 
 ---
 

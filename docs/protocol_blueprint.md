@@ -4,7 +4,7 @@ Concrete Framing Rule & Wire Examples: Concrete examples of your chosen framing 
 
 The protocol uses Option B: Length-Prefixed Framing. Each message begins with a 4-byte unsigned big-endian header containing the byte length of the UTF-8 JSON payload, excluding the header. No newline terminator is used.
 
-msg_type, STRING, must be one of eight defined message names
+msg_type, STRING, must be one of nine defined message names (`REMATCH` was added in Sprint 3 to support the FSM's REMATCH_WAIT state)
 
 payload, OBJ, Required for each message types seen below. All field listed in schema are required
 
@@ -19,7 +19,8 @@ Client will input an alias and server will finalize conenction by validating ali
 | `STATE_UPDATE` | Server $\rightarrow$  Both clients | Feedback, both players’ counters, active player, turn identifier |
 | `ERROR` | Server $\rightarrow$  Client | Error code and explanation |
 | `DISCONNECT` | Client $\rightarrow$  Server | Departure reason |
-| `GAME_OVER` | Server $\rightarrow$  Both connected clients | Outcome, winner, reason, final counters, and display message |
+| `GAME_OVER` | Server $\rightarrow$  Both connected clients | Outcome, winner, reason, final counters, display message, and session leaderboard |
+| `REMATCH` | Client $\rightarrow$  Server | Play-again choice after GAME_OVER |
 
 **EXPECTED STRUCTURE of each:**
 
@@ -233,6 +234,16 @@ ANNOUCEs final result and counters
 | `final_guess` | string or null | Most recent accepted guess; `null` if none |
 | `players` | array of objects | Same player-counter structure as `STATE_UPDATE` |
 | `message` | string | Human-readable result |
+| `leaderboard` | array of objects | Session standings, sorted by `rounds_won` descending, then `total_guesses` ascending |
+
+**LEADERBOARD OBJECTS**
+
+| Field | Type | Rule |
+|---|---|---|
+| `player_number` | integer | `1` or `2` |
+| `alias` | string | Player alias |
+| `rounds_won` | integer | Rounds won this session (kept across rematches) |
+| `total_guesses` | integer | Valid guesses submitted this session (timeouts not counted) |
 
 ```json
 {
@@ -255,7 +266,38 @@ ANNOUCEs final result and counters
                 "miss_turn": 1
             }
         ],
-        "message": "You both lose."
+        "message": "You both lose.",
+        "leaderboard": [
+            {
+                "player_number": 1,
+                "alias": "Superman",
+                "rounds_won": 0,
+                "total_guesses": 10
+            },
+            {
+                "player_number": 2,
+                "alias": "Bizarro",
+                "rounds_won": 0,
+                "total_guesses": 9
+            }
+        ]
+    }
+}
+```
+
+**REMATCH:**
+
+Sent by each client after GAME_OVER (server state REMATCH_WAIT) to accept or decline another round. When both players send `true`, the server sends a new GAME_START and keeps session totals. A `false` (or a departure) makes the server close that client and send LOBBY_WAIT to the remaining player, who becomes Player 1. Sending REMATCH in any other state produces `INVALID_STATE`.
+
+| Payload field | Type | Rule |
+|---|---|---|
+| `play_again` | boolean | `true` to play again, `false` to leave |
+
+```json
+{
+    "msg_type": "REMATCH",
+    "payload": {
+        "play_again": true
     }
 }
 ```
