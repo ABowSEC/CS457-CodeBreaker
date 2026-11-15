@@ -482,7 +482,7 @@ class GameServer:
             self.cleanup()
 
     def handle_departure(self, conn, reason):
-        """DISCONNECT, EOF or socket error -- handled exactly once."""
+        """DISCONNECT, EOF or socket error (handled exactly once)."""
         if conn.departed:
             return
         self.close_conn(conn)

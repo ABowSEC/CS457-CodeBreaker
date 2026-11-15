@@ -140,7 +140,7 @@ Enter 4 unique digits, or 'quit' to leave.
 Your guess: 1123
 
 [SERVER ERROR] INVALID_GUESS: Guess must be 4 unique digits (0-9).
-Still your turn - try again.
+Still your turn. Try again.
 Your guess: 4567
 
 Alice guessed 4567: 0 right place, 3 wrong place.
@@ -370,7 +370,7 @@ Bob guessed 5432: 1 right place, 1 wrong place.
 Waiting for Alice's guess... (turn 9)
 
 ====================================================
- GAME OVER - YOU WIN! (FORFEIT, PLAYER_QUIT)
+ GAME OVER: YOU WIN! (FORFEIT, PLAYER_QUIT)
  Alice quit; Bob wins by forfeit.
  Secret code was 5846
 ====================================================

@@ -160,7 +160,7 @@ def handle_message(state, msg_type, p):
             elif (state.phase == "PLAYING"
                   and state.active_player in (None, state.my_number)):
                 # active_player is None while our MOVE awaits a reply.
-                show("Still your turn - try again.")
+                show("Still your turn. Try again.")
 
         elif msg_type == proto.GAME_OVER:
             state.phase = "GAME_OVER"
@@ -174,7 +174,7 @@ def handle_message(state, msg_type, p):
                 headline = "YOU WIN!"
             else:
                 headline = f"{state.name(p['winner'])} WINS"
-            show(f" GAME OVER - {headline} ({p['outcome']}, {p['reason']})")
+            show(f" GAME OVER: {headline} ({p['outcome']}, {p['reason']})")
             show(f" {p['message']}")
             show(f" Secret code was {p['secret_code']}")
             show("=" * 52)
@@ -284,7 +284,7 @@ def play(sock, state, alias):
             with state.lock:
                 # Turn may have ended (timeout) while we were typing.
                 if state.turn_id != turn_id or state.phase != "PLAYING":
-                    show("Too late - that turn has ended.")
+                    show("Too late, that turn has ended.")
                     continue
                 # Mark as pending so we do not prompt again until the
                 # server replies with STATE_UPDATE / ERROR / GAME_OVER.
