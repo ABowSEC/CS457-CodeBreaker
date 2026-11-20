@@ -213,7 +213,15 @@ nodes:
         type: physical
         slot: 3
   - boot_disk_size: null
-    configuration: []
+    configuration:
+      - name: node.cfg
+        content: |-
+          # this is a shell script which will be sourced at boot
+          hostname AB-Client1
+          USERNAME=cisco
+          PASSWORD=cisco
+          ip link set eth0 up
+          udhcpc -b -i eth0
     cpu_limit: null
     cpus: null
     data_volume: null
@@ -239,7 +247,15 @@ nodes:
         type: physical
         slot: 0
   - boot_disk_size: null
-    configuration: []
+    configuration:
+      - name: node.cfg
+        content: |-
+          # this is a shell script which will be sourced at boot
+          hostname AB-Client2
+          USERNAME=cisco
+          PASSWORD=cisco
+          ip link set eth0 up
+          udhcpc -b -i eth0
     cpu_limit: null
     cpus: null
     data_volume: null
@@ -265,7 +281,17 @@ nodes:
         type: physical
         slot: 0
   - boot_disk_size: null
-    configuration: []
+    configuration:
+      - name: node.cfg
+        content: |-
+          # this is a shell script which will be sourced at boot
+          hostname AB-Server
+          USERNAME=cisco
+          PASSWORD=cisco
+          ip addr add 192.168.20.100/24 dev eth0
+          ip link set eth0 up
+          ip route add default via 192.168.20.1
+          echo "nameserver 192.168.20.1" > /etc/resolv.conf
     cpu_limit: null
     cpus: null
     data_volume: null
